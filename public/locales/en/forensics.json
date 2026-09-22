@@ -1,0 +1,93 @@
+{
+  "dashboard": {
+    "title": "Open-Forensics — DFIR Training",
+    "subtitle": "Select a scenario to start your investigation",
+    "categories": {
+      "memory": "Memory Analysis",
+      "disk": "Disk Analysis",
+      "logs": "Log Analysis",
+      "timeline": "Forensic Timeline",
+      "network": "Network Analysis (PCAP)",
+      "browser": "Browser Artifacts",
+      "registry": "Windows Registry Analysis"
+    }
+  },
+  "scenarios": {
+    "memory-injection": {
+      "title": "Process Injection Detection",
+      "description": "Analyze a memory dump to identify suspicious processes. Look for code injection signs and malicious network connections.",
+      "q1": "Which process shows signs of code injection?",
+      "q1_opt1": "svchost.exe (PID 4284) — Suspicious DLL and C2 connection",
+      "q1_opt2": "explorer.exe (PID 2048) — Normal system process",
+      "q1_opt3": "chrome.exe (PID 5612) — Web browser",
+      "q1_opt4": "System (PID 4) — Kernel process",
+      "q1_exp": "svchost.exe (PID 4284) is suspicious because: 1) it loads a non-Microsoft DLL (msupdt.dll) from a temporary path, 2) it establishes an outbound connection to an external IP on port 443, 3) its parent process is not services.exe as expected.",
+      "q2": "What injection technique is used here?",
+      "q2_opt1": "T1055 — Process Injection (DLL Injection)",
+      "q2_opt2": "T1053 — Scheduled Task",
+      "q2_opt3": "T1547 — Boot Autostart Execution",
+      "q2_opt4": "T1003 — Credential Dumping",
+      "q2_exp": "The attacker uses DLL injection (T1055): a malicious DLL (msupdt.dll) is loaded into the memory space of svchost.exe, a legitimate process, to hide."
+    },
+    "disk-persistence": {
+      "title": "Persistence Mechanism Analysis",
+      "description": "Examine Windows disk artifacts to identify persistence mechanisms installed by an attacker.",
+      "q1": "Which artifact indicates persistence via Prefetch?",
+      "q1_opt1": "POWERSHELL.EXE-*.pf with abnormal execution frequency",
+      "q1_opt2": "CHROME.EXE-*.pf — normal browser",
+      "q1_opt3": "SVCHOST.EXE-*.pf — system service",
+      "q1_opt4": "NOTEPAD.EXE-*.pf — text editor",
+      "q1_exp": "The PowerShell Prefetch file with 47 executions in 2 hours is highly suspicious. Prefetch files show execution history and the abnormal frequency indicates automated activity, typical of a persistence script."
+    },
+    "log-lateral-movement": {
+      "title": "Lateral Movement Detection",
+      "description": "Analyze Windows Event logs to detect lateral movement in the network. Identify the techniques used by the attacker.",
+      "q1": "Which Event ID indicates lateral movement via PsExec?",
+      "q1_opt1": "Event ID 7045 — New service installed",
+      "q1_opt2": "Event ID 4624 — Successful Logon (normal type)",
+      "q1_opt3": "Event ID 4672 — Special privileges assigned",
+      "q1_opt4": "Event ID 1102 — Audit log cleared",
+      "q1_exp": "Event ID 7045 (installation of a new service named 'PSEXESVC') is the most reliable indicator of PsExec usage for lateral movement. This service is temporarily created on the target machine."
+    },
+    "timeline-attack": {
+      "title": "Attack Timeline Reconstruction",
+      "description": "Reconstruct the complete timeline of an attack from mixed events. Order events to understand the kill chain.",
+      "q1": "What is the first event in the attack chain?",
+      "q1_opt1": "Phishing email received by user (09:14:22)",
+      "q1_opt2": "Encoded PowerShell execution (09:18:45)",
+      "q1_opt3": "C2 connection established (09:19:30)",
+      "q1_opt4": "Scheduled task created (09:25:10)",
+      "q1_exp": "The attack chain begins with the phishing email (Initial Access - T1566) received at 09:14:22, followed by opening the malicious attachment which triggers code execution."
+    },
+    "pcap-exfiltration": {
+      "title": "DNS Exfiltration Detection",
+      "description": "Analyze network captures to detect data exfiltration via the DNS protocol. Identify suspicious queries.",
+      "q1": "What DNS pattern indicates data exfiltration?",
+      "q1_opt1": "TXT queries with long Base64-encoded subdomains",
+      "q1_opt2": "Normal A queries to public DNS servers",
+      "q1_opt3": "MX queries for email resolution",
+      "q1_opt4": "PTR queries for reverse resolution",
+      "q1_exp": "DNS exfiltration typically uses TXT queries or very long Base64-encoded subdomains (e.g., aGVsbG8gd29ybGQ.evil.com). The abnormal size of subdomains (>50 characters) is a reliable indicator."
+    },
+    "browser-compromise": {
+      "title": "Browser Artifacts Investigation",
+      "description": "Examine browser artifacts from a compromised user. Reconstruct suspicious activity from history, cookies and downloads.",
+      "q1": "Which browser artifact reveals the initial infection vector?",
+      "q1_opt1": "History showing a visit to a drive-by download site",
+      "q1_opt2": "Cookie from a legitimate shopping site",
+      "q1_opt3": "Download of a PDF from a professional email",
+      "q1_opt4": "Bookmark to a news site",
+      "q1_exp": "The browsing history shows a visit to update-flash-player[.]com (malicious site mimicking Adobe) followed immediately by a download of 'FlashUpdate.exe'. This is a classic drive-by download."
+    },
+    "registry-persistence": {
+      "title": "Registry Persistence Analysis",
+      "description": "Examine Windows registry keys to identify hidden persistence mechanisms. Analyze Run keys, Services and scheduled tasks.",
+      "q1": "Which registry key is used for persistence?",
+      "q1_opt1": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run — 'WindowsUpdate' pointing to an .exe in AppData",
+      "q1_opt2": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion — Windows version",
+      "q1_opt3": "HKCU\\Software\\Microsoft\\Office — Office settings",
+      "q1_opt4": "HKLM\\SYSTEM\\CurrentControlSet\\Services — legitimate services",
+      "q1_exp": "The Run key under HKCU with a program named 'WindowsUpdate' pointing to C:\\Users\\<user>\\AppData\\Local\\Temp\\svchost.exe is a classic persistence mechanism. The name mimics a legitimate process and the Temp location is suspicious."
+    }
+  }
+}

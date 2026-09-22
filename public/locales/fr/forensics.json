@@ -1,0 +1,93 @@
+{
+  "dashboard": {
+    "title": "Open-Forensics — Entraînement DFIR",
+    "subtitle": "Sélectionnez un scénario pour commencer votre investigation",
+    "categories": {
+      "memory": "Analyse Mémoire",
+      "disk": "Analyse de Disque",
+      "logs": "Analyse de Logs",
+      "timeline": "Timeline Forensique",
+      "network": "Analyse Réseau (PCAP)",
+      "browser": "Artefacts Navigateur",
+      "registry": "Analyse Registre Windows"
+    }
+  },
+  "scenarios": {
+    "memory-injection": {
+      "title": "Détection d'Injection de Processus",
+      "description": "Analysez un dump mémoire pour identifier des processus suspects. Recherchez les signes d'injection de code et les connexions réseau malveillantes.",
+      "q1": "Quel processus présente des signes d'injection de code ?",
+      "q1_opt1": "svchost.exe (PID 4284) — DLL suspecte et connexion C2",
+      "q1_opt2": "explorer.exe (PID 2048) — processus système normal",
+      "q1_opt3": "chrome.exe (PID 5612) — navigateur web",
+      "q1_opt4": "System (PID 4) — processus noyau",
+      "q1_exp": "svchost.exe (PID 4284) est suspect car : 1) il charge une DLL non-Microsoft (msupdt.dll) depuis un chemin temporaire, 2) il établit une connexion sortante vers une IP externe sur le port 443, 3) son processus parent n'est pas services.exe comme attendu.",
+      "q2": "Quelle technique d'injection est utilisée ici ?",
+      "q2_opt1": "T1055 — Process Injection (DLL Injection)",
+      "q2_opt2": "T1053 — Scheduled Task",
+      "q2_opt3": "T1547 — Boot Autostart Execution",
+      "q2_opt4": "T1003 — Credential Dumping",
+      "q2_exp": "L'attaquant utilise l'injection de DLL (T1055) : une DLL malveillante (msupdt.dll) est chargée dans l'espace mémoire de svchost.exe, un processus légitime, pour se dissimuler."
+    },
+    "disk-persistence": {
+      "title": "Analyse des Mécanismes de Persistance",
+      "description": "Examinez les artefacts de disque Windows pour identifier les mécanismes de persistance installés par un attaquant.",
+      "q1": "Quel artefact indique une persistance via Prefetch ?",
+      "q1_opt1": "POWERSHELL.EXE-*.pf avec une fréquence anormale d'exécution",
+      "q1_opt2": "CHROME.EXE-*.pf — navigateur normal",
+      "q1_opt3": "SVCHOST.EXE-*.pf — service système",
+      "q1_opt4": "NOTEPAD.EXE-*.pf — éditeur texte",
+      "q1_exp": "Le fichier Prefetch de PowerShell avec 47 exécutions en 2 heures est hautement suspect. Les fichiers Prefetch montrent l'historique d'exécution et la fréquence anormale indique une activité automatisée, typique d'un script de persistance."
+    },
+    "log-lateral-movement": {
+      "title": "Détection de Mouvement Latéral",
+      "description": "Analysez les logs Windows Event pour détecter un mouvement latéral dans le réseau. Identifiez les techniques utilisées par l'attaquant.",
+      "q1": "Quel Event ID indique un mouvement latéral via PsExec ?",
+      "q1_opt1": "Event ID 7045 — Installation d'un nouveau service",
+      "q1_opt2": "Event ID 4624 — Logon réussi (type normal)",
+      "q1_opt3": "Event ID 4672 — Privilèges spéciaux assignés",
+      "q1_opt4": "Event ID 1102 — Audit log effacé",
+      "q1_exp": "L'Event ID 7045 (installation d'un nouveau service nommé 'PSEXESVC') est l'indicateur le plus fiable de l'utilisation de PsExec pour le mouvement latéral. Ce service est créé temporairement sur la machine cible."
+    },
+    "timeline-attack": {
+      "title": "Reconstruction de Timeline d'Attaque",
+      "description": "Reconstituez la chronologie complète d'une attaque à partir d'événements mélangés. Ordonnez les événements pour comprendre la kill chain.",
+      "q1": "Quel est le premier événement de la chaîne d'attaque ?",
+      "q1_opt1": "Email de phishing reçu par l'utilisateur (09:14:22)",
+      "q1_opt2": "Exécution de PowerShell encodé (09:18:45)",
+      "q1_opt3": "Connexion C2 établie (09:19:30)",
+      "q1_opt4": "Création de tâche planifiée (09:25:10)",
+      "q1_exp": "La chaîne d'attaque commence par l'email de phishing (Initial Access - T1566) reçu à 09:14:22, suivi de l'ouverture de la pièce jointe malveillante qui déclenche l'exécution de code."
+    },
+    "pcap-exfiltration": {
+      "title": "Détection d'Exfiltration DNS",
+      "description": "Analysez les captures réseau pour détecter une exfiltration de données via le protocole DNS. Identifiez les requêtes suspectes.",
+      "q1": "Quel pattern DNS indique une exfiltration de données ?",
+      "q1_opt1": "Requêtes TXT avec de longs sous-domaines encodés en Base64",
+      "q1_opt2": "Requêtes A normales vers des serveurs DNS publics",
+      "q1_opt3": "Requêtes MX pour la résolution email",
+      "q1_opt4": "Requêtes PTR pour la résolution inverse",
+      "q1_exp": "L'exfiltration DNS utilise typiquement des requêtes TXT ou des sous-domaines très longs encodés en Base64 (ex: aGVsbG8gd29ybGQ.evil.com). La taille anormale des sous-domaines (>50 caractères) est un indicateur fiable."
+    },
+    "browser-compromise": {
+      "title": "Investigation d'Artefacts Navigateur",
+      "description": "Examinez les artefacts du navigateur d'un utilisateur compromis. Reconstituez l'activité suspecte à partir de l'historique, cookies et téléchargements.",
+      "q1": "Quel artefact navigateur révèle le vecteur d'infection initial ?",
+      "q1_opt1": "Historique montrant une visite sur un site de drive-by download",
+      "q1_opt2": "Cookie d'un site de commerce légitime",
+      "q1_opt3": "Téléchargement d'un PDF depuis un email professionnel",
+      "q1_opt4": "Bookmark vers un site d'actualités",
+      "q1_exp": "L'historique de navigation montre une visite sur update-flash-player[.]com (site malveillant imitant Adobe) suivie immédiatement d'un téléchargement de 'FlashUpdate.exe'. C'est un drive-by download classique."
+    },
+    "registry-persistence": {
+      "title": "Analyse de Persistance via le Registre",
+      "description": "Examinez les clés de registre Windows pour identifier les mécanismes de persistance cachés. Analysez Run keys, Services et tâches planifiées.",
+      "q1": "Quelle clé de registre est utilisée pour la persistance ?",
+      "q1_opt1": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run — 'WindowsUpdate' pointant vers un .exe en AppData",
+      "q1_opt2": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion — version de Windows",
+      "q1_opt3": "HKCU\\Software\\Microsoft\\Office — paramètres Office",
+      "q1_opt4": "HKLM\\SYSTEM\\CurrentControlSet\\Services — services légitimes",
+      "q1_exp": "La clé Run sous HKCU avec un programme nommé 'WindowsUpdate' pointant vers C:\\Users\\<user>\\AppData\\Local\\Temp\\svchost.exe est un mécanisme de persistance classique. Le nom imite un processus légitime et l'emplacement dans Temp est suspect."
+    }
+  }
+}
