@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { FileText } from 'lucide-react';
 import { getForensicsScenarioById } from '../../data/forensics';
 import ScoreBoard from '../../components/shared/ScoreBoard';
+import IncidentReportModal from '../../components/shared/IncidentReportModal';
 import { useProgressStore } from '../../stores/useProgressStore';
 import { calculateScore } from '../../utils/scoring';
 
@@ -10,6 +12,7 @@ const ForensicsResults: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation(['forensics', 'common']);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   
   const scenario = getForensicsScenarioById(id || '');
   const result = useProgressStore((state) => state.getScenarioResult(id || ''));
@@ -34,10 +37,21 @@ const ForensicsResults: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="mb-8 flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          {t('forensics:results.title')} - {t(scenario.titleKey)}
-        </h1>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            {t('forensics:results.title')} — {t(scenario.titleKey)}
+          </h1>
+          <p className="text-sm text-slate-400 font-mono mt-1">Dossier d'expertise forensique complété.</p>
+        </div>
+
+        <button
+          onClick={() => setIsReportOpen(true)}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-sm font-bold font-mono transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] cursor-pointer"
+        >
+          <FileText className="w-4 h-4" />
+          <span>Générer le Rapport d'Expertise</span>
+        </button>
       </div>
 
       <ScoreBoard 
@@ -58,7 +72,7 @@ const ForensicsResults: React.FC = () => {
             {scenario.mitreTechniques.map(tech => (
               <span 
                 key={tech}
-                className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium border border-gray-200 dark:border-gray-600"
+                className="px-3 py-1 bg-cyan-500/10 text-cyan-400 rounded-full text-sm font-mono font-medium border border-cyan-500/20"
               >
                 {tech}
               </span>
@@ -66,6 +80,17 @@ const ForensicsResults: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Incident Report Modal */}
+      <IncidentReportModal
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        scenario={scenario}
+        score={result.score}
+        maxScore={result.maxScore}
+        timeSpent={result.timeSpent}
+        answers={result.answers}
+      />
     </div>
   );
 };
