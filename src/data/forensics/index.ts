@@ -6,9 +6,11 @@ import { timelineForensicsScenario } from './scenarios/timeline-forensics';
 import { networkForensicsScenario } from './scenarios/network-forensics';
 import { browserArtifactsScenario } from './scenarios/browser-artifacts';
 import { registryAnalysisScenario } from './scenarios/registry-analysis';
+import { lsassDumpScenario } from './scenarios/lsass-dump';
 
 export const forensicsScenarios: ForensicsScenario[] = [
   memoryAnalysisScenario,
+  lsassDumpScenario,
   diskAnalysisScenario,
   logAnalysisScenario,
   timelineForensicsScenario,

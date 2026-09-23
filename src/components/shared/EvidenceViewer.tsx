@@ -4,6 +4,8 @@ import { FileText, Mail, Network, Cpu, Database, Clock, Globe, File, Radio, Term
 import type { Evidence } from '../../types/scenario';
 import ForensicTerminal from '../forensics/ForensicTerminal';
 import DFIRPlaybookModal from '../forensics/DFIRPlaybookModal';
+import RegistryViewer from '../forensics/RegistryViewer';
+import TimelineVisualizer from '../forensics/TimelineVisualizer';
 
 interface EvidenceViewerProps {
   evidence: Evidence[];
@@ -72,6 +74,16 @@ const EvidenceViewer: React.FC<EvidenceViewerProps> = ({ evidence, translationNa
           </table>
         </div>
       );
+    }
+
+    // Windows Registry Visualizer
+    if (data?.keys && Array.isArray(data.keys)) {
+      return <RegistryViewer keys={data.keys} />;
+    }
+
+    // Super-Timeline Visualizer
+    if (data?.events && Array.isArray(data.events)) {
+      return <TimelineVisualizer events={data.events} />;
     }
 
     return (

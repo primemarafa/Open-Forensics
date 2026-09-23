@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Copy, Check, Download, X, Shield, Award } from 'lucide-react';
+import { FileText, Copy, Check, Download, X, Shield, Award, Printer } from 'lucide-react';
 import type { ForensicsScenario } from '../../types/forensics';
 
 interface IncidentReportModalProps {
@@ -90,6 +90,235 @@ ${scenario.questions
     URL.revokeObjectURL(url);
   };
 
+  const handlePrintPDF = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <title>Rapport d'Expertise DFIR - CASE-${scenario.id.toUpperCase()}</title>
+        <style>
+          @page { size: A4; margin: 18mm; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #1e293b;
+            line-height: 1.5;
+            font-size: 13px;
+            margin: 0;
+            padding: 0;
+          }
+          .header-banner {
+            border-bottom: 2px solid #0891b2;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+          }
+          .title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 4px 0;
+          }
+          .badge-tlp {
+            display: inline-block;
+            background: #ecfeff;
+            color: #0e7490;
+            border: 1px solid #a5f3fc;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 11px;
+            font-family: monospace;
+          }
+          .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+          }
+          .meta-item span {
+            display: block;
+            font-size: 10px;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 600;
+          }
+          .meta-item strong {
+            font-size: 14px;
+            color: #0f172a;
+          }
+          h2 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            border-left: 4px solid #06b6d4;
+            padding-left: 8px;
+            margin: 20px 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .mitre-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+          }
+          .mitre-pill {
+            background: #ecfeff;
+            color: #0891b2;
+            border: 1px solid #cffafe;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: monospace;
+            font-weight: 600;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+          }
+          th, td {
+            border: 1px solid #e2e8f0;
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 12px;
+          }
+          th {
+            background: #f1f5f9;
+            color: #475569;
+            font-weight: 600;
+          }
+          .ans-code {
+            font-family: monospace;
+            background: #f1f5f9;
+            padding: 1px 4px;
+            border-radius: 3px;
+          }
+          .footer-sign {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #cbd5e1;
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #64748b;
+          }
+          .seal {
+            border: 2px dashed #06b6d4;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 700;
+            color: #0e7490;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header-banner">
+          <div>
+            <div class="badge-tlp">LABORATOIRE DFIR • EXPERTISE TECHNIQUE CERTIFIÉE</div>
+            <h1 class="title">Rapport d'Investigation Forensique (DFIR)</h1>
+            <div style="font-family: monospace; color: #64748b; font-size: 11px;">
+              Dossier : CASE-${scenario.id.toUpperCase()}-${new Date().getFullYear()} • Open-Forensics Platform
+            </div>
+          </div>
+          <div style="text-align: right; font-size: 11px; color: #64748b;">
+            Date d'examen : <strong>${dateStr}</strong><br>
+            Expert : <strong>Analyste Forensique L2 / Judiciaire</strong>
+          </div>
+        </div>
+
+        <div class="meta-grid">
+          <div class="meta-item">
+            <span>Dossier d'Expertise</span>
+            <strong>${scenario.id}</strong>
+          </div>
+          <div class="meta-item">
+            <span>Complexité</span>
+            <strong style="text-transform: uppercase;">${scenario.difficulty}</strong>
+          </div>
+          <div class="meta-item">
+            <span>Résolution Forensique</span>
+            <strong style="color: #0891b2;">${score} / ${maxScore} (${percentage}%)</strong>
+          </div>
+          <div class="meta-item">
+            <span>Durée d'Analyse</span>
+            <strong>${timeFormatted}</strong>
+          </div>
+        </div>
+
+        <h2>1. Synthèse de l'Investigation Numérique</h2>
+        <p style="margin: 0 0 10px 0;">
+          Une expertise approfondie a été menée sur les preuves du cas <strong>${scenario.category.toUpperCase()}</strong>.
+          L'investigation a respecté les normes de préservation de la preuve numérique (RFC 3227, intégrité cryptographique SHA-256) pour reconstruire fidèlement les actions de l'attaquant.
+        </p>
+
+        <h2>2. Techniques Identifiées (MITRE ATT&CK)</h2>
+        <div class="mitre-tags">
+          ${scenario.mitreTechniques?.map(t => `<span class="mitre-pill">${t}</span>`).join('') || '<span>Non spécifié</span>'}
+        </div>
+
+        <h2>3. Réponses Techniques de l'Investigateur</h2>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 10%;">#</th>
+              <th style="width: 50%;">Question / Examen Forensique</th>
+              <th style="width: 40%;">Constat de l'Investigateur</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${scenario.questions.map((q, idx) => `
+              <tr>
+                <td><strong>Q${idx + 1}</strong></td>
+                <td>${q.questionKey}</td>
+                <td><span class="ans-code">${answers[q.id] || 'Non renseigné'}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <h2>4. Recommandations & Mesures Post-Investigation</h2>
+        <ol style="margin: 0; padding-left: 20px;">
+          <li><strong>Préservation des Images :</strong> Conserver l'empreinte bit-à-bit sous scellé avec contrôle d'intégrité cryptographique.</li>
+          <li><strong>Threat Hunting :</strong> Déployer des requêtes sur l'ensemble du parc avec les IOCs extraits de l'échantillon.</li>
+          <li><strong>Détection Proactive :</strong> Créer des signatures YARA et règles EDR sur les vecteurs d'exécution identifiés.</li>
+        </ol>
+
+        <div class="footer-sign">
+          <div>
+            Rapport d'expertise généré par la plateforme <strong>Open-Forensics</strong>.<br>
+            Empreinte cryptographique : <code>DFIR-SHA256-${Math.random().toString(36).substring(2, 10).toUpperCase()}</code>
+          </div>
+          <div class="seal">
+            LAB FORENSIQUE<br>PREUVE CLÔTURÉE
+          </div>
+        </div>
+
+        <script>
+          window.onload = function() {
+            window.print();
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
       <div className="relative w-full max-w-3xl max-h-[88vh] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-200 font-sans">
@@ -103,7 +332,7 @@ ${scenario.questions
               <h3 className="text-base font-bold text-slate-100 font-mono">
                 Rapport d'Expertise DFIR : CASE-{scenario.id.toUpperCase()}
               </h3>
-              <p className="text-xs text-slate-400">Rapport d'investigation certifié prêt pour restitution</p>
+              <p className="text-xs text-slate-400">Rapport certifié prêt pour restitution PDF ou portfolio</p>
             </div>
           </div>
           <button
@@ -150,14 +379,21 @@ ${scenario.questions
               className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-mono transition-colors cursor-pointer"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? 'Copié !' : 'Copier Markdown'}</span>
+              <span>{copied ? 'Copié !' : 'Copier'}</span>
             </button>
             <button
               onClick={handleDownload}
-              className="flex items-center gap-1.5 px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-mono font-bold transition-all shadow-[0_0_10px_rgba(6,182,212,0.3)] cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-mono transition-colors cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Télécharger .md</span>
+              <span>.md</span>
+            </button>
+            <button
+              onClick={handlePrintPDF}
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-mono font-bold transition-all shadow-[0_0_10px_rgba(6,182,212,0.3)] cursor-pointer"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Imprimer / PDF</span>
             </button>
           </div>
         </div>
