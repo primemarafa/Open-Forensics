@@ -1,71 +1,249 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HardDrive, Cpu, FileText, Clock, Network, Globe, Database } from 'lucide-react';
+import { 
+  Search, 
+  Trophy, 
+  Flame, 
+  CheckCircle, 
+  Layers, 
+  SlidersHorizontal,
+  HardDrive,
+  X
+} from 'lucide-react';
 import { forensicsScenarios } from '../../data/forensics';
 import ScenarioCard from '../../components/shared/ScenarioCard';
 import { useProgressStore } from '../../stores/useProgressStore';
 
-const getCategoryIcon = (category: string) => {
-  switch (category) {
-    case 'disk': return <HardDrive className="w-6 h-6 text-blue-500" />;
-    case 'memory': return <Cpu className="w-6 h-6 text-yellow-500" />;
-    case 'log': return <FileText className="w-6 h-6 text-green-500" />;
-    case 'timeline': return <Clock className="w-6 h-6 text-red-500" />;
-    case 'network': return <Network className="w-6 h-6 text-purple-500" />;
-    case 'browser': return <Globe className="w-6 h-6 text-orange-500" />;
-    case 'registry': return <Database className="w-6 h-6 text-indigo-500" />;
-    default: return <FileText className="w-6 h-6 text-gray-500" />;
-  }
-};
-
-const ForensicsDashboard: React.FC = () => {
-  const { t } = useTranslation(['forensics', 'common']);
+export default function ForensicsDashboard() {
   const navigate = useNavigate();
-  const isCompleted = useProgressStore((state) => state.isCompleted);
-  const getBestScore = useProgressStore((state) => state.getBestScore);
+  const { isCompleted, getBestScore, totalScore, streak, getCompletionRate } = useProgressStore();
 
-  const categories = Array.from(new Set(forensicsScenarios.map(s => s.category)));
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
+
+  const completionRate = getCompletionRate(forensicsScenarios.length);
+
+  const categories = useMemo(() => {
+    return ['all', ...Array.from(new Set(forensicsScenarios.map((s) => s.category)))];
+  }, []);
+
+  const filteredScenarios = useMemo(() => {
+    return forensicsScenarios.filter((scenario) => {
+      const matchesCategory = selectedCategory === 'all' || scenario.category === selectedCategory;
+      const matchesDifficulty = selectedDifficulty === 'all' || scenario.difficulty === selectedDifficulty;
+      
+      if (!matchesCategory || !matchesDifficulty) return false;
+
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.toLowerCase();
+
+      return (
+        scenario.id.toLowerCase().includes(term) ||
+        scenario.titleKey.toLowerCase().includes(term) ||
+        scenario.descriptionKey.toLowerCase().includes(term) ||
+        scenario.tags?.some((tag) => tag.toLowerCase().includes(term)) ||
+        scenario.mitreTechniques?.some((tech) => tech.toLowerCase().includes(term))
+      );
+    });
+  }, [searchTerm, selectedCategory, selectedDifficulty]);
+
+  // Determine DFIR Investigator Rank
+  const getInvestigatorRank = (score: number) => {
+    if (score >= 600) return { title: 'Lead Forensique / Expert Judiciaire', color: 'text-purple-400', bg: 'bg-purple-500/10 border-purple-500/30' };
+    if (score >= 350) return { title: 'Analyste DFIR Confirmé', color: 'text-cyan-400', bg: 'bg-cyan-500/10 border-cyan-500/30' };
+    if (score >= 100) return { title: 'Investigateur DFIR Junior', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/30' };
+    return { title: 'Technicien Collecte & Préservation', color: 'text-slate-400', bg: 'bg-slate-800/80 border-slate-700/60' };
+  };
+
+  const rank = getInvestigatorRank(totalScore);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('forensics:dashboard.title')}</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-300">{t('forensics:dashboard.description')}</p>
-      </div>
+    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-10">
+      {/* Hero Command Center Header */}
+      <div className="relative rounded-3xl p-8 sm:p-10 bg-gradient-to-b from-slate-900/90 via-slate-900/60 to-slate-950/80 border border-slate-800/80 backdrop-blur-2xl shadow-2xl overflow-hidden">
+        {/* Subtle decorative glow orb */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none -mt-20"></div>
+        <div className="absolute bottom-0 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none -mb-20"></div>
 
-      <div className="space-y-12">
-        {categories.map(category => {
-          const categoryScenarios = forensicsScenarios.filter(s => s.category === category);
-          return (
-            <div key={category}>
-              <div className="flex items-center space-x-3 mb-6">
-                {getCategoryIcon(category)}
-                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 capitalize">
-                  {t(`forensics:categories.${category}`)}
-                </h2>
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+          <div className="space-y-4 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-mono font-medium">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+              LABORATOIRE DFIR OPÉRATIONNEL • DISQUES & MÉMOIRE
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
+              Simulateur d'{' '}
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-500">
+                Enquêtes Numériques DFIR
+              </span>
+            </h1>
+
+            <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+              Menez des expertises judiciaires et techniques post-incident : analyse forensique de dumps RAM (Volatility), extraction d'artefacts d'exécution Windows (Prefetch, Amcache, MFT) et reconstitution de timeline complète d'intrusion.
+            </p>
+          </div>
+
+          {/* Quick Investigator Profile Badge */}
+          <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/90 flex flex-col gap-3 min-w-[260px] shadow-lg">
+            <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
+              <span>PROFIL INVESTIGATEUR</span>
+              <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${rank.bg} ${rank.color}`}>
+                {rank.title}
+              </span>
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between items-baseline">
+                <span className="text-2xl font-bold font-mono text-cyan-400">{totalScore}</span>
+                <span className="text-xs text-slate-500 font-mono">points d'expertise</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {categoryScenarios.map(scenario => {
-                  const completed = isCompleted(scenario.id);
-                  const bestScore = getBestScore(scenario.id);
-                  return (
-                    <ScenarioCard
-                      key={scenario.id}
-                      scenario={scenario}
-                      isCompleted={completed}
-                      bestScore={bestScore}
-                      onClick={() => navigate(`/scenario/${scenario.id}`)}
-                    />
-                  );
-                })}
+              <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-cyan-500 to-blue-500 h-1.5 rounded-full transition-all duration-500" 
+                  style={{ width: `${Math.min(100, (totalScore / 600) * 100)}%` }}
+                ></div>
               </div>
             </div>
-          );
-        })}
+          </div>
+        </div>
+
+        {/* Operational Metrics Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-slate-800/60">
+          <div className="p-4 rounded-xl bg-slate-950/40 border border-slate-800/60 space-y-1">
+            <div className="flex items-center gap-2 text-slate-400 text-xs font-mono">
+              <Layers className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Cas Forensiques</span>
+            </div>
+            <div className="text-2xl font-bold font-mono text-white">
+              {forensicsScenarios.length} <span className="text-xs text-slate-500 font-normal">cas</span>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-950/40 border border-slate-800/60 space-y-1">
+            <div className="flex items-center gap-2 text-slate-400 text-xs font-mono">
+              <CheckCircle className="w-3.5 h-3.5 text-blue-400" />
+              <span>Taux de Résolution</span>
+            </div>
+            <div className="text-2xl font-bold font-mono text-cyan-400">
+              {completionRate}%
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-950/40 border border-slate-800/60 space-y-1">
+            <div className="flex items-center gap-2 text-slate-400 text-xs font-mono">
+              <Flame className="w-3.5 h-3.5 text-amber-400" />
+              <span>Série d'Enquêtes</span>
+            </div>
+            <div className="text-2xl font-bold font-mono text-amber-400">
+              {streak} <span className="text-xs text-slate-500 font-normal">jours</span>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-950/40 border border-slate-800/60 space-y-1">
+            <div className="flex items-center gap-2 text-slate-400 text-xs font-mono">
+              <Trophy className="w-3.5 h-3.5 text-yellow-400" />
+              <span>Score Total</span>
+            </div>
+            <div className="text-2xl font-bold font-mono text-cyan-400">
+              {totalScore} <span className="text-xs text-slate-500 font-normal">pts</span>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Filter and Search Command Toolbar */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl">
+        {/* Search Input */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Rechercher artefact, outil (ex: Volatility, MFT, Mimikatz)..."
+            className="w-full pl-10 pr-9 py-2.5 bg-slate-950/80 border border-slate-700/80 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-mono transition-colors"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-3 text-slate-500 hover:text-slate-300"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Filter Badges & Difficulty Selector */}
+        <div className="flex items-center gap-3 overflow-x-auto pb-1 md:pb-0">
+          <div className="flex items-center gap-1.5 bg-slate-950/60 p-1 rounded-xl border border-slate-800/80">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono capitalize transition-all cursor-pointer ${
+                  selectedCategory === cat
+                    ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 font-bold shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                }`}
+              >
+                {cat === 'all' ? 'Tous' : cat}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1 bg-slate-950/60 px-2 py-1 rounded-xl border border-slate-800/80 text-xs font-mono text-slate-400">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
+            <select
+              value={selectedDifficulty}
+              onChange={(e) => setSelectedDifficulty(e.target.value)}
+              className="bg-transparent text-slate-300 focus:outline-none cursor-pointer py-1"
+            >
+              <option value="all" className="bg-slate-900 text-slate-200">Toutes Difficultés</option>
+              <option value="easy" className="bg-slate-900 text-slate-200">Facile</option>
+              <option value="medium" className="bg-slate-900 text-slate-200">Moyen</option>
+              <option value="hard" className="bg-slate-900 text-slate-200">Difficile</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Scenarios Grid */}
+      {filteredScenarios.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredScenarios.map((scenario) => {
+            const completed = isCompleted(scenario.id);
+            const bestScore = getBestScore(scenario.id);
+            return (
+              <ScenarioCard
+                key={scenario.id}
+                scenario={scenario}
+                isCompleted={completed}
+                bestScore={bestScore}
+                onClick={() => navigate(`/scenario/${scenario.id}`)}
+              />
+            );
+          })}
+        </div>
+      ) : (
+        <div className="p-12 text-center rounded-2xl bg-slate-900/40 border border-slate-800 space-y-3">
+          <HardDrive className="w-12 h-12 text-slate-600 mx-auto" />
+          <h3 className="text-base font-bold text-slate-300 font-mono">Aucune investigation trouvée</h3>
+          <p className="text-slate-500 text-xs max-w-sm mx-auto">
+            Aucun cas forensique ne correspond à votre recherche "{searchTerm}". Essayez de réinitialiser vos filtres.
+          </p>
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setSelectedCategory('all');
+              setSelectedDifficulty('all');
+            }}
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-mono transition-colors"
+          >
+            Réinitialiser les filtres
+          </button>
+        </div>
+      )}
     </div>
   );
-};
-
-export default ForensicsDashboard;
+}
